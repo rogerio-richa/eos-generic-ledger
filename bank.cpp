@@ -13,7 +13,7 @@ class bank : public contract {
             _statuses(_self, N(ledger)) {}
 
         // @abi action
-        void test(name sender, string note) {
+        void submit_note(name sender, string note) {
             
             require_auth(sender);
 
@@ -27,7 +27,7 @@ class bank : public contract {
             }
             else _statuses.modify( iter, 0, [&]( auto& row) {
                 
-               row.status = status;
+               row.note = note;
             });
         }
 
@@ -49,4 +49,4 @@ class bank : public contract {
         multi_index<N(statz), _status> _statuses;
 };
 
-EOSIO_ABI( basics, (test) )
+EOSIO_ABI( bank, (submit_note) )
