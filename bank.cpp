@@ -10,43 +10,82 @@ class bank : public contract {
     public:
         bank( account_name self ) :
             contract(self),
-            _statuses(_self, N(ledger)) {}
+            _ledger(_self, N(ledger)),
+            _ledger_stats(_self, N(ledger))
+    {}
 
         // @abi action
-        void submit_note(name sender, string note) {
+        void submit(name sender, string note) {
             
             require_auth(sender);
+            
+            // add here a check to only allow a specific user to manipulate this ledger
 
-            auto iter = _statuses.find(sender);
-            if(iter == _statuses.end()) {
+            auto iter = _ledger.find(0);
+            if(iter == _ledger.end()) {
                 
-                _statuses.emplace( sender, [&]( auto& row) {
-                    row.sender = sender;
+                _ledger.emplace( sender, [&] (auto& row) {
+                    
+                    row.height = 0;
                     row.note = note;
                 });
-            }
-            else _statuses.modify( iter, 0, [&]( auto& row) {
                 
-               row.note = note;
+                _ledger_stats.emplace( sender, [&](auto& row) {
+
+                    row.id = N(ledger_depth);
+                    row.height = 0;
+                });
+                
+                return;
+            }
+            
+            auto iter2 = _ledger_stats.find(N(ledger_depth));
+            uint64_t height = (iter2->height);
+            
+            _ledger.emplace( sender, [&](auto& row) {
+
+                row.height = ++height;
+                row.note = note;
+            });
+            
+            
+            _ledger_stats.modify (iter2, sender, [&](auto& row) {
+                
+                row.height++;
             });
         }
 
     private:
+    
+        // @abi table ledgerstats
+        struct _ledger_info {
 
-        // @abi table statz
-        struct _status {
+            uint64_t id;
+            uint64_t height;
+            uint64_t primary_key() const {
+
+                return id;
+            }
+
+            EOSLIB_SERIALIZE(_ledger_info, (id)(height))
+        };
+        multi_index<N(ledgerstats), _ledger_info> _ledger_stats;
+
+    
+        // @abi table ledger
+        struct _ledger_entry {
             
-            name sender;
+            uint64_t height;
             string note;
-            name primary_key() const {
+            uint64_t primary_key() const {
                 
-                return sender;
+                return height;
             }
             
-            EOSLIB_SERIALIZE(_status, (sender)(note))
+            EOSLIB_SERIALIZE(_ledger_entry, (height)(note))
         };
 
-        multi_index<N(statz), _status> _statuses;
+        multi_index<N(ledger), _ledger_entry> _ledger;
 };
 
-EOSIO_ABI( bank, (submit_note) )
+EOSIO_ABI( bank, (submit) )
