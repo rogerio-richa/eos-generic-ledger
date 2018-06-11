@@ -1,7 +1,7 @@
 # eos-generic-ledger
 
 ## Pre-requisites
-* An available testnet with a loaded eos.bios contract
+* An available testnet with a loaded eos.bios contract & existing/issued eosio.token SYS tokens
 
 
 ## How does it work
@@ -15,5 +15,5 @@ cleos push action bank submit_note '["user","a note from user"]' -p user
 ## To query notes
 To see a list of all notes, use the command below:
 ```
-cleos get table bank ledger statz
+cleos get table bank ledger ledger
 ```
